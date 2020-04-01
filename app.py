@@ -5,7 +5,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, UserEditForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Likes
 
 CURR_USER_KEY = "curr_user"
 
@@ -223,6 +223,7 @@ def profile():
 
     if form.validate_on_submit():
         
+        username = form.username.data
         email = form.email.data
         image_url = form.image_url.data
         header_image_url = form.header_image_url.data
@@ -259,6 +260,17 @@ def delete_user():
     db.session.commit()
 
     return redirect("/signup")
+
+@app.route('/users/<int:user_id>/likes')
+def list_all_likes(user_id):
+    """ Get a list of all user likes """
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    user = User.query.get_or_404(user_id)
+    return render_template('users/likes.html', user=user)
 
 
 ##############################################################################
@@ -310,6 +322,18 @@ def messages_destroy(message_id):
     return redirect(f"/users/{g.user.id}")
 
 
+@app.route('/messages/<int:message_id>/like', methods=["POST"])
+def like_message(message_id):
+    """Like a message."""
+
+    new_like = Likes(user_id=g.user.id, message_id=message_id)
+    db.session.add(new_like)
+    db.session.commit()
+
+    return redirect(f'/users/{g.user.id}/likes')
+
+
+
 ##############################################################################
 # Homepage and error pages
 
@@ -322,9 +346,10 @@ def homepage():
     - logged in: 100 most recent messages of followed_users
     """
 
-    users_following_id = [following.id for following in g.user.following]
 
     if g.user:
+        users_following_id = [following.id for following in g.user.following] + [g.user.id]
+
         messages = (Message
                     .query
                     .filter(Message.user_id.in_(users_following_id))
