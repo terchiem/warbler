@@ -12,8 +12,9 @@
             <img src="{{ g.user.image_url }}"
                  alt="Image for {{ g.user.username }}"
                  class="card-image">
-            <p>@{{ g.user.username }}</p>
+            <p>@{{ g.user.username }}</p>      
           </a>
+          
           <ul class="user-stats nav nav-pills">
             <li class="stat">
               <p class="small">Messages</p>
@@ -33,7 +34,8 @@
                 <a href="/users/{{ g.user.id }}/followers">{{ g.user.followers | length }}</a>
               </h4>
             </li>
-          </ul>
+          </ul>          
+
         </div>
       </div>
     </aside>
