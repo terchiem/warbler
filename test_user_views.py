@@ -46,11 +46,19 @@ class UserViewTestCase(TestCase):
 
         self.client = app.test_client()
 
-        self.testuser = User.signup(username="testuser",
-                                    email="test@test.com",
-                                    password="testuser",
-                                    image_url=None)
+        self.user1 = User.signup("user1", "test1@test.com", "password", None)
+        self.user2 = User.signup("user2", "test2@test.com", "password", None)
 
+        db.session.commit()
+
+    def setup_messages_and_likes(self):
+        m1 = Message(text="user1 message", user_id=self.user1.id)
+        m2 = Message(text="user2 message", user_id=self.user2.id)
+        db.session.add_all([m1, m2])
+        db.session.commit()
+
+        like = Likes(user_id=self.user1.id, message_id=m2.id)
+        db.session.add(like)
         db.session.commit()
 
 
