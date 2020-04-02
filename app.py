@@ -223,18 +223,14 @@ def profile():
 
     if form.validate_on_submit():
         
-        username = form.username.data
-        email = form.email.data
-        image_url = form.image_url.data
-        header_image_url = form.header_image_url.data
-        bio = form.bio.data
         password = form.password.data
 
         if User.authenticate(g.user.username, password):
-            g.user.email = email
-            g.user.image_url = image_url
-            g.user.header_image_url = header_image_url
-            g.user.bio = bio
+            
+            g.user.email = form.email.data
+            g.user.image_url = form.image_url.data
+            g.user.header_image_url = form.header_image_url.data
+            g.user.bio = form.bio.data
 
             db.session.commit()
             return redirect(f'/users/{g.user.id}')
@@ -324,14 +320,26 @@ def messages_destroy(message_id):
 
 @app.route('/messages/<int:message_id>/like', methods=["POST"])
 def like_message(message_id):
-    """Like a message."""
+    """Toggle liking a message."""
+    
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
 
-    new_like = Likes(user_id=g.user.id, message_id=message_id)
-    db.session.add(new_like)
-    db.session.commit()
+    liked_message = Likes.query.filter_by(user_id=g.user.id, message_id=message_id).first()
+    
+    if liked_message:
+        db.session.delete(liked_message)
+        db.session.commit()
 
-    return redirect(f'/users/{g.user.id}/likes')
+        return redirect("/")
 
+    else:
+        new_like = Likes(user_id=g.user.id, message_id=message_id)
+        db.session.add(new_like)
+        db.session.commit()
+
+        return redirect(f'/users/{g.user.id}/likes')
 
 
 ##############################################################################
@@ -352,13 +360,20 @@ def homepage():
 
         messages = (Message
                     .query
-                    .filter(Message.user_id.in_(users_following_id))
+                    .filter(Message.user_id.in_(users_following_id)) 
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
 
-        return render_template('home.html', messages=messages)
+        liked_msg_ids = {messages.id for messages in g.user.likes}
 
+### time complexity ( looking up something in a set is O(1) vs in a list O(n)
+### list_of_liked_msgs (not apparent, think about WHAT you actually get, )
+
+        return render_template('home.html', messages=messages, likes=liked_msg_ids)
+
+### likes=list_of_liked_msgs (likes can be confusing later on in the future, can forget what 
+# you refer to ) change likes later (for html and 376 )
     else:
         return render_template('home-anon.html')
 
