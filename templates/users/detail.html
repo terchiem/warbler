@@ -8,7 +8,7 @@
 <div class="row full-width">
   <div class="container">
     <div class="row justify-content-end">
-      <div class="col-9">
+      <div class="col-9.5">
         <ul class="user-stats nav nav-pills">
           <li class="stat">
             <p class="small">Messages</p>
@@ -31,16 +31,18 @@
           <li class="stat">
             <p class="small">Likes</p>
             <h4>
-              <a href="/users/{{ user.id }}/likes">{{ user.likes | length }}</a>
+              <a id ="num-likes" href="/users/{{ user.id }}/likes">{{ user.likes | length }}</a>
             </h4>
           </li>
           <div class="ml-auto">
             {% if g.user.id == user.id %}
+            <a href="/users/{{user.id}}/inbox" class="btn btn-outline-success mr-2">Inbox</a>
             <a href="/users/profile" class="btn btn-outline-secondary">Edit Profile</a>
-            <form method="POST" action="/users/delete" class="form-inline">
+            <form method="POST" action="/users/{{user.id}}" class="form-inline">
               <button class="btn btn-outline-danger ml-2">Delete Profile</button>
             </form>
             {% elif g.user %}
+            <a href="/users/{{user.id}}/inbox" class="btn btn-outline-success mr-2 " data-toggle="modal" data-target="#exampleModal">Send Messages</a>
             {% if g.user.is_following(user) %}
             <form method="POST" action="/users/stop-following/{{ user.id }}">
               <button class="btn btn-primary">Unfollow</button>
@@ -69,5 +71,36 @@
   {% endblock %}
 
 </div>
+
+<!-- modal added for sending DMS-->
+
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Direct Message to @{{user.username}}!</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="/users/{{user.id}}/inbox">
+          {{ g.form.csrf_token }}
+          <div>
+            {% if g.form.text.errors %}
+              {% for error in g.form.text.errors %}
+                <span class="text-danger">
+              {{ error }}
+            </span>
+              {% endfor %}
+            {% endif %}
+            {{ g.form.text(placeholder="What's up buddy?", class="form-control", rows="3") }}
+          </div>
+          <button class="btn btn-outline-success btn-block">Add my message!</button>
+        </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
 {% endblock %}

@@ -32,12 +32,17 @@ connect_db(app)
 @app.before_request
 def add_user_to_g():
     """If we're logged in, add curr user to Flask global."""
+    g.form = MessageForm()
 
     if CURR_USER_KEY in session:
         g.user = User.query.get(session[CURR_USER_KEY])
 
+
     else:
         g.user = None
+
+
+
 
 
 def do_login(user):
@@ -154,7 +159,10 @@ def users_show(user_id):
                 .order_by(Message.timestamp.desc())
                 .limit(100)
                 .all())
-    return render_template('users/show.html', user=user, messages=messages)
+
+    liked_msg_ids = {messages.id for messages in g.user.likes}
+
+    return render_template('users/show.html', user=user, messages=messages, likes = liked_msg_ids)
 
 
 @app.route('/users/<int:user_id>/following')
@@ -354,7 +362,6 @@ def homepage():
     - logged in: 100 most recent messages of followed_users
     """
 
-
     if g.user:
         users_following_id = [following.id for following in g.user.following] + [g.user.id]
 
@@ -367,13 +374,8 @@ def homepage():
 
         liked_msg_ids = {messages.id for messages in g.user.likes}
 
-### time complexity ( looking up something in a set is O(1) vs in a list O(n)
-### list_of_liked_msgs (not apparent, think about WHAT you actually get, )
+        return render_template('home.html', messages=messages, likes=liked_msg_ids )
 
-        return render_template('home.html', messages=messages, likes=liked_msg_ids)
-
-### likes=list_of_liked_msgs (likes can be confusing later on in the future, can forget what 
-# you refer to ) change likes later (for html and 376 )
     else:
         return render_template('home-anon.html')
 
@@ -382,6 +384,63 @@ def homepage():
 def page_not_found(e):
     # note that we set the 404 status explicitly
     return render_template('404.html'), 404
+
+##############################################################################
+# DM TIME MAN!!!!!
+
+@app.route('/users/inbox')
+def inbox():
+    """show inbox"""
+
+    if not g.user:  # TODO: check if user is owner of message
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    # messages = TODO
+
+    return render_template("users/inbox.html")
+
+@app.route("/users/<int:user_id>/inbox", methods=["POST"])
+def sending_DM():
+    """sending DM to an another user"""
+
+    if not g.user:  
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+    
+    form = MessageForm()
+
+    if form.vlaidate_on_submit():
+        msg = Message(text=form.text.data)
+
+    
+
+
+
+@app.route('/messages/new', methods=["GET", "POST"])
+def messages_add():
+    """Add a message:
+
+    Show form if GET. If valid, update message and redirect to user page.
+    """
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    form = MessageForm()
+
+    if form.validate_on_submit():
+        msg = Message(text=form.text.data)
+        g.user.messages.append(msg)
+        db.session.commit()
+
+        return redirect(f"/users/{g.user.id}")
+
+    return render_template('messages/new.html', form=form)
+
+
+    
 
 
 ##############################################################################
@@ -403,6 +462,9 @@ def api_like_message(message_id):
             db.session.add(new_like)
             db.session.commit()
 
+            ##TODO: factor that out to a helper function , have one method handle both api and web request
+            ##delete web reuqest for like ## make a test one for API change one that we had for web one to api 
+                
     return ""
 
 
@@ -422,3 +484,5 @@ def add_header(req):
     req.headers["Expires"] = "0"
     req.headers['Cache-Control'] = 'public, max-age=0'
     return req
+
+

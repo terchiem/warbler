@@ -200,6 +200,12 @@ class Message(db.Model):
     user = db.relationship('User')
 
 
+class DirectMessage(Message):
+    """ Direct Message to other users"""
+
+    __tablename__ = "direct messages"
+
+
 def connect_db(app):
     """Connect this database to provided Flask app.
 
