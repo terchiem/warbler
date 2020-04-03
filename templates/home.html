@@ -57,9 +57,11 @@
             {% if g.user.id != msg.user.id %}
             <form method="POST" action="/messages/{{ msg.id }}/like" class="messages-like">
               <button class="
+                like-btn
                 btn 
                 btn-sm 
                 {{'btn-primary' if msg.id in likes else 'btn-secondary'}}"
+                id="{{ msg.id }}"
               >
                 <i class="fa fa-thumbs-up"></i> 
               </button>

@@ -378,6 +378,34 @@ def homepage():
         return render_template('home-anon.html')
 
 
+@app.errorhandler(404)
+def page_not_found(e):
+    # note that we set the 404 status explicitly
+    return render_template('404.html'), 404
+
+
+##############################################################################
+# API Endpoints
+
+@app.route('/api/messages/<int:message_id>/like', methods=["POST"])
+def api_like_message(message_id):
+    """Toggle liking a message."""
+    
+    if g.user:
+        liked_message = Likes.query.filter_by(user_id=g.user.id, message_id=message_id).first()
+        
+        if liked_message:
+            db.session.delete(liked_message)
+            db.session.commit()
+
+        else:
+            new_like = Likes(user_id=g.user.id, message_id=message_id)
+            db.session.add(new_like)
+            db.session.commit()
+
+    return ""
+
+
 ##############################################################################
 # Turn off all caching in Flask
 #   (useful for dev; in production, this kind of stuff is typically
