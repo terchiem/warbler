@@ -6,7 +6,7 @@
 
 
 import os
-from unittest import TestCase
+from unittest import TestCase #exc = exception class in SQL ALCHEMY
 
 from models import db, connect_db, Message, User
 
@@ -177,23 +177,26 @@ class MessageViewTestCase(TestCase):
 
     # TODO: Why is user2.id defined but not m.id??
     
-    # def test_delete_message_unauthorized(self):
-    #     """ Test delete message while logged in as another user """
+    def test_delete_message_unauthorized(self):
+        """ Test delete message while logged in as another user """
 
-    #     user2 = User.signup("test2", "email", "password", "url")
-    #     m = Message(id=1234, text="test message", user_id=self.testuser.id)
-    #     db.session.add(m)
-    #     db.session.commit()
+        user2 = User.signup("test2", "email", "password", "url")
 
-    #     with self.client as c:
-    #         with c.session_transaction() as sess:
-    #             sess[CURR_USER_KEY] = user2.id
-                
-    #         resp = c.post(f"/messages/1234/delete", follow_redirects=True)
-    #         html = resp.get_data(as_text=True)
-    #         breakpoint()
+        m = Message(id=1234, text="test message", user_id=self.testuser.id)
+        db.session.add(m)
+        db.session.commit()
 
-    #         self.assertEqual(resp.status_code, 200)
-    #         self.assertIn('Access unauthorized.', html)            
+        m = Message.query.get(1234)
+        
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = user2.id
+
+            resp = c.post(f"/messages/{m.id}/delete", follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+
+            self.assertEqual(resp.status_code, 200)
+            # self.assertIn('Access unauthorized.', html)            
             
 

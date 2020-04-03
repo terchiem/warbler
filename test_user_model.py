@@ -7,7 +7,7 @@
 
 import os
 from unittest import TestCase
-from sqlalchemy import exc
+from sqlalchemy import exc #exc = exception class in SQL ALCHEMY
 from models import db, User, Message, Follows
 
 # BEFORE we import our app, let's set an environmental variable
